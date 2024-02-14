@@ -35,3 +35,9 @@ Future ideas
     1. Caching for regularly asked questions
     2. Make it a full fledged reader app in which the user can write their own notes
     3. Check for kindle support
+
+Implementation Details
+
+    1. Figure out a way to identify each individual chapters, then form the summary of those (hard, look into this later)
+    2. Create summaries of every 100 pages or so. 
+    3. Look into feeding the summary of the previous pages as well for better context (will need to do this for both case 1 and case 2)
