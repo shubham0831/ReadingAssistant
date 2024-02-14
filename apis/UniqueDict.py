@@ -1,4 +1,4 @@
-class UniqueDict:
+class UniqueDict(dict):
     def __init__(self):
         self._data = {}
 

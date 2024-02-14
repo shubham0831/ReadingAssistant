@@ -13,8 +13,6 @@ class ReadingAssistant():
         fileId = self.pdfManager.addFile(filepath, pagesPerChunk)
 
         nextChunk = self.pdfManager.readNextChunk(fileId)
-        log.info(nextChunk)
-
-        log.info("=====================================================")
         nextChunk = self.pdfManager.readNextChunk(fileId)
-        log.info(nextChunk)
+
+        log.info(f"Done reading, stats are \n {self.pdfManager.getFileStats(fileId)}")

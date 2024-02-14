@@ -1,13 +1,15 @@
 import fitz 
 import logging as log
 from UniqueDict import UniqueDict
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
+from anthropic import Anthropic
 
 class PdfManager:
     def __init__(self):
-        self.filesDict: Dict[int, Any] = dict()
+        self.filesDict = dict()
         self.lastKey = 0
-        
+        self.anthropicTokenCounter = Anthropic()
+                
     def addFile(self, filePath: str, pagesPerChunk: int) -> int:
         key = self.lastKey
         self.filesDict[key] = {
@@ -18,13 +20,14 @@ class PdfManager:
             "pagesRead": 0,
             "finished": False,
             "pagesPerChunk": pagesPerChunk,
-            "chunksRead": 0
+            "chunksRead": 0,
+            "tokensRead": 0
         }
         
         self.lastKey += 1
         return key
     
-    def read(self, fileKey: int, startPage: int, endPage: int) -> str:
+    def read(self, fileKey: int, startPage: int, endPage: int) -> Tuple[str, int]:
         docDict = self._getDocDict(fileKey)
 
         doc = docDict["doc"]
@@ -42,7 +45,8 @@ class PdfManager:
         if endPage == totalPages:
             docDict['finished'] = True
 
-        return content
+        tokenCount = self.anthropicTokenCounter.count_tokens(content)
+        return content, tokenCount
     
     def readComplete(self, fileKey: int) -> dict:
         docDict = self._getDocDict(fileKey)
@@ -55,16 +59,17 @@ class PdfManager:
         endPage = startPage + pagesPerChunk
 
         while docDict['finished'] == False:
-            content = self.read(fileKey, startPage, endPage)
-            contentDict[chunkNumber] = content
+            content, tokenCount = self.read(fileKey, startPage, endPage)
+            contentDict[chunkNumber] = {"content":content, "tokenCount":tokenCount}
             chunkNumber += 1
             startPage = endPage
             endPage = startPage + pagesPerChunk
             docDict["chunksRead"] += 1
+            docDict["tokensRead"] += tokenCount
 
         return contentDict
     
-    def readNextChunk(self, fileKey: int) -> str:
+    def readNextChunk(self, fileKey: int) -> dict:
         docDict = self._getDocDict(fileKey)
         pagesPerChunk = docDict["pagesPerChunk"]
         chunksRead = docDict["chunksRead"]
@@ -74,9 +79,15 @@ class PdfManager:
             startPage = pagesPerChunk * chunksRead
         
         endPage = startPage + pagesPerChunk
-        content = self.read(fileKey, startPage, endPage)
+        content, tokenCount = self.read(fileKey, startPage, endPage)
         docDict["chunksRead"] += 1
-        return content
+
+        contentDict = dict()
+        contentDict[0] = {"content":content, "tokenCount":tokenCount}
+
+        docDict["tokensRead"] += tokenCount
+        
+        return contentDict
 
     def getFileStats(self, fileKey: int) -> dict:
         return self._getDocDict(fileKey)
