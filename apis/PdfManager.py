@@ -1,11 +1,11 @@
 import fitz 
 import logging as log
 from UniqueDict import UniqueDict
+from typing import Dict, Any
 
 class PdfManager:
-    def __init__(self, pagesPerSummary: int):
-        self.pagesPerSummary = pagesPerSummary
-        self.filesDict = dict()
+    def __init__(self):
+        self.filesDict: Dict[int, Any] = dict()
         self.lastKey = 0
         
     def addFile(self, filePath: str, pagesPerChunk: int) -> int:
@@ -81,7 +81,7 @@ class PdfManager:
     def getFileStats(self, fileKey: int) -> dict:
         return self._getDocDict(fileKey)
 
-    def _getDocDict(self, fileKey: int) -> None:
+    def _getDocDict(self, fileKey: int) -> dict:
         docDict = self.filesDict[fileKey]
 
         if docDict["loaded"] == False:

@@ -3,19 +3,20 @@ import logging as log
 from Config import Config
 from PdfManager import PdfManager
 from ClaudeManager import ClaudeManager
+from ReadingAssistant import ReadingAssistant
 
-config = Config()
-print(config.get("logLevel"))
-
-log.basicConfig(level=config.get("logLevel"), format='%(asctime)s - %(levelname)s - %(message)s')
+PDF_FILE_PATH = "/Users/shubham/Code/personal/ReadingAssistant/apis/testpdfs/duneBook1.pdf"
 
 if __name__ == '__main__':
     config = Config()
     log.basicConfig(level=config.get("logLevel"), format='%(asctime)s - %(levelname)s - %(message)s')
-
+    
     claudeManager = ClaudeManager(config.get("anthropic"))
-    pdfManager = PdfManager(config.get("pagesPerSummary"))
-    log.info(claudeManager.sendMessage("user", "hi"))
+    pdfManager = PdfManager()
+
+    readingAssistant = ReadingAssistant(claudeManager, pdfManager, config.get("copyPromptToClipboard"))
+    summary = readingAssistant.generateSummary(PDF_FILE_PATH, config.get("pagesPerChunk"))
+
 
 # app = Flask(__name__)
 # 
