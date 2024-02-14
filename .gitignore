@@ -2,5 +2,6 @@
 /apis/__pycache__/*
 /.vscode/*
 /apis/config.json
-# /apis/testpdfs/*
+/apis/testpdfs/*
+/.venv/*
 
