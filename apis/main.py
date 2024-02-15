@@ -14,8 +14,8 @@ if __name__ == '__main__':
     claudeManager = ClaudeManager(config.get("anthropic"))
     pdfManager = PdfManager()
 
-    readingAssistant = ReadingAssistant(claudeManager, pdfManager, config.get("copyPromptToClipboard"))
-    summary = readingAssistant.generateSummary(PDF_FILE_PATH, config.get("pagesPerChunk"))
+    readingAssistant = ReadingAssistant(claudeManager, pdfManager, config.get("copyTextToClipboard"))
+    summary = readingAssistant.generateSummary(PDF_FILE_PATH, config.get("pagesPerChunk"), 2)
 
 
 # app = Flask(__name__)
