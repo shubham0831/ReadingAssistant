@@ -18,6 +18,7 @@ if __name__ == '__main__':
     log.basicConfig(level=config.get("logLevel"), format='%(asctime)s - %(levelname)s - %(message)s')
     
     dbHandler = DbHandler(config.get("db"))
+    dbHandler.createIndexIfNotExist(INDEX_NAME)
     # create new index if does not exist
     
     claudeManager = ClaudeManager(config.get("anthropic"))
@@ -25,6 +26,8 @@ if __name__ == '__main__':
 
     readingAssistant = ReadingAssistant(claudeManager, pdfManager, dbHandler, config.get("copyTextToClipboard"))
     summary = readingAssistant.generateSummary(PDF_FILE_PATH, config.get("pagesPerChunk"), 2)
+
+    # dbHandler.de
 
 
 # app = Flask(__name__)
