@@ -19,7 +19,6 @@ if __name__ == '__main__':
     
     dbHandler = DbHandler(config.get("db"))
     dbHandler.createIndexIfNotExist(INDEX_NAME)
-    # create new index if does not exist
     
     claudeManager = ClaudeManager(config.get("anthropic"))
     pdfManager = PdfManager()
@@ -27,7 +26,8 @@ if __name__ == '__main__':
     readingAssistant = ReadingAssistant(claudeManager, pdfManager, dbHandler, config.get("copyTextToClipboard"))
     summary = readingAssistant.generateSummary(PDF_FILE_PATH, config.get("pagesPerChunk"), 2)
 
-    # dbHandler.de
+    # clean up
+    dbHandler.deleteAllIndexes()
 
 
 # app = Flask(__name__)
