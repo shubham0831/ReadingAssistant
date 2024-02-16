@@ -4,17 +4,26 @@ from Config import Config
 from PdfManager import PdfManager
 from ClaudeManager import ClaudeManager
 from ReadingAssistant import ReadingAssistant
+from DbHandler import DbHandler
 
 PDF_FILE_PATH = "/Users/shubham/Code/personal/ReadingAssistant/apis/testpdfs/duneBook1.pdf"
-
+INDEX_NAME = "DuneBookOne"
+'''
+TODO: Read this 
+    Good document for end user use case, when they provide a question, we need to figure out the relevant summary to be used, etc
+    https://www.marqo.ai/blog/from-iron-manual-to-ironman-augmenting-gpt-with-marqo-for-fast-editable-memory-to-enable-context-aware-question-answering
+'''
 if __name__ == '__main__':
     config = Config()
     log.basicConfig(level=config.get("logLevel"), format='%(asctime)s - %(levelname)s - %(message)s')
     
+    dbHandler = DbHandler(config.get("db"))
+    # create new index if does not exist
+    
     claudeManager = ClaudeManager(config.get("anthropic"))
     pdfManager = PdfManager()
 
-    readingAssistant = ReadingAssistant(claudeManager, pdfManager, config.get("copyTextToClipboard"))
+    readingAssistant = ReadingAssistant(claudeManager, pdfManager, dbHandler, config.get("copyTextToClipboard"))
     summary = readingAssistant.generateSummary(PDF_FILE_PATH, config.get("pagesPerChunk"), 2)
 
 
