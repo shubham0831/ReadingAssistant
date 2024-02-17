@@ -1,7 +1,9 @@
 import marqo
 from UniqueDict import UniqueDict
 from typing import List, Dict, Any, Union
+import logging as log
 
+# Run Marqo on m1 macs --> https://docs.marqo.ai/0.0.21/m1_mac_users/
 class DbHandler():
     def __init__(self, config: UniqueDict):
         hostname = str(config.get("hostname"))
@@ -12,12 +14,18 @@ class DbHandler():
     def createIndex(self, indexName: str) -> Dict[str, Any]:
         # returns the following dict {'acknowledged': True, 'index': indexName}
         return self.mq.create_index(indexName)
-        self.mq.index(indexName).add_documents()
-        return
     
     def createIndexIfNotExist(self, indexName:str) -> Dict[str, Any]:
-        if indexName in self.getAllIndexes():
-            return {'index': indexName, 'acknowledged': True}
+        result = self.getAllIndexes()
+        allIndexes = result['results']
+
+        if len(allIndexes) == 0:
+            return self.createIndex(indexName)
+        
+        for indexDict in allIndexes:
+           if indexName == indexDict['indexName']:
+                return {'index': indexName, 'acknowledged': True}
+        
         return self.createIndex(indexName)
 
     def deleteIndex(self, indexName: str) -> Dict[str, Any]:
@@ -30,9 +38,12 @@ class DbHandler():
         return self.mq.delete_index(indexName)
     
     def deleteAllIndexes(self) -> List[Dict[str, Any]]:
+        log.warn("Deleting all indexes")
         response = []
-        allIndexes = self.getAllIndexes()
-        for indexName in allIndexes.keys():
+        result = self.getAllIndexes()
+        allIndexes = result['results']
+        for indexDict in allIndexes: 
+            indexName = indexDict['indexName']
             response.append(self.deleteIndex(indexName))
         return response
         
@@ -54,7 +65,8 @@ class DbHandler():
 
         return self.mq.index(indexName).add_documents(
             documents=documents,
-            tensor_fields=tensorFields
+            tensor_fields=tensorFields,
+            client_batch_size=24
         )
     
     def addSingleDocument(
