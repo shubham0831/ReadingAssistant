@@ -3,6 +3,9 @@ import logging as log
 from UniqueDict import UniqueDict
 from typing import Dict, Any, Tuple
 from anthropic import Anthropic
+import chardet
+import ast
+import re
 
 LOADED = "loaded"
 FILE_PATH = "filePath"
@@ -15,6 +18,10 @@ CHUNKS_READ = "chunksRead"
 TOKENS_READ = "tokensRead"
 CONTENT = "content"
 TOKEN_COUNT = "tokenCount"
+CONTENT_DICT = "contentDict"
+START_PAGE = "startPage"
+END_PAGE = "endPage"
+PAGE_DICT = "pageDict"
 
 class PdfManager:
     def __init__(self):
@@ -39,7 +46,7 @@ class PdfManager:
         self.lastKey += 1
         return key
     
-    def read(self, fileKey: int, startPage: int, endPage: int) -> Tuple[str, int]:
+    def read(self, fileKey: int, startPage: int, endPage: int, cleanText: bool = True) -> Tuple[str, Dict[int, str], int]:
         docDict = self._getDocDict(fileKey)
 
         doc = docDict["doc"]
@@ -47,18 +54,22 @@ class PdfManager:
 
         endPage = min(endPage, totalPages) 
         content = ""
+        pageDict = {}
         for pageNum in range(startPage, endPage):
             page = doc[pageNum]
             content += page.get_text()
-        
+            pageDict[pageNum] = content
         # will be useful in knowing where to resume from
         docDict[PAGES_READ] = endPage
 
         if endPage == totalPages:
             docDict[FINISHED]= True
 
+        if cleanText:
+            content = self.cleanText(content)
+
         tokenCount = self.anthropicTokenCounter.count_tokens(content)
-        return content, tokenCount
+        return content, pageDict, tokenCount
     
     def readComplete(self, fileKey: int) -> dict:
         docDict = self._getDocDict(fileKey)
@@ -71,14 +82,22 @@ class PdfManager:
         endPage = startPage + pagesPerChunk
 
         while docDict[FINISHED] == False:
-            content, tokenCount = self.read(fileKey, startPage, endPage)
-            contentDict[chunkNumber] = {CONTENT:content, TOKEN_COUNT:tokenCount}
+            content, pageDict, tokenCount = self.read(fileKey, startPage, endPage)
+            contentDict[chunkNumber] = {
+                CONTENT:content,
+                TOKEN_COUNT:tokenCount,
+                START_PAGE: startPage,
+                END_PAGE: endPage,
+                PAGE_DICT: pageDict
+            }
             chunkNumber += 1
             startPage = endPage
             endPage = startPage + pagesPerChunk
             docDict[CHUNKS_READ] += 1
             docDict[TOKENS_READ] += tokenCount
 
+        docDict[CONTENT_DICT] = contentDict
+        
         return contentDict
     
     def readNextChunk(self, fileKey: int) -> dict:
@@ -91,7 +110,7 @@ class PdfManager:
             startPage = pagesPerChunk * chunksRead
         
         endPage = startPage + pagesPerChunk
-        content, tokenCount = self.read(fileKey, startPage, endPage)
+        content, pageDict, tokenCount = self.read(fileKey, startPage, endPage)
         docDict[CHUNKS_READ] += 1
 
         contentDict = {CONTENT:content, TOKEN_COUNT:tokenCount}
@@ -145,41 +164,37 @@ class PdfManager:
         
         return docDict
 
+    def cleanText(self, content: str) -> str:
+        # try:
+        #     textEncoding = chardet.detect(content.encode())["encoding"]
 
-# from Prompts import *
-# import pyperclip
+        #     if not textEncoding:
+        #         textEncoding = "utf-8"
+        #     else:
+        #         textEncoding = str(textEncoding)
 
-# PDF_FILE_PATH = "/Users/shubham/Code/personal/ReadingAssistant/apis/testpdfs/duneBook1.pdf"
+        #     decodedText = content.encode(textEncoding).decode("unicode_escape")
+        #     cleanText = decodedText
+        # except UnicodeDecodeError:
+        #     log.warn("Error in decoding text, aborting this operation")
+        #     cleanText = content
+        # content = content.replace(r"\u", r"\\u")
+        # content = ast.literal_eval(f'r"""{content}"""')
+        cleanText = content.encode("utf-8").decode("unicode_escape")
+        cleanText = re.sub(r'\\u([0-9a-fA-F]{4})', lambda m: chr(int(m.group(1), 16)), cleanText)
+        cleanText = ''.join(char for char in cleanText if char.isprintable())
+        cleanText = cleanText.strip()
+        cleanText = ' '.join(cleanText.split())
 
-# def pdfToText(pdfPath: str):
-#     doc = fitz.open(pdfPath)
+        return cleanText
 
-#     # totalPages = doc.page_count
+    def search(self, fileKey: int, chunkNumber:int, value:str) -> Tuple[bool, int]:
+        docDict = self._getDocDict(fileKey)
+        contentDict = docDict[CONTENT_DICT][chunkNumber]
+        pageDict = contentDict[PAGE_DICT]
 
-#     context = ""
-#     blob = ""
+        for pageNumber, pageContent in pageDict.items():
+            if value in pageContent:
+                return True, pageNumber 
 
-#     for pageNum in range(100):
-#        page = doc[pageNum]
-#        context += page.get_text()
-    
-#     for pageNum in range(100, 200):
-#         page = doc[pageNum]
-#         blob += page.get_text()
-
-#     doc.close()
-#     return blob, context
-
-# # Example usage
-# blob, context = pdfToText(PDF_FILE_PATH)
-
-# samplePrompt = prompts[PAGES_SUMMARY_PROMPT] + f"\n here is the blob : {blob} \n here is the context : {context}"
-
-# pyperclip.copy(samplePrompt)
-# # singleLineText = ' '.join(samplePrompt.splitlines())
-# # singleLineText = singleLineText.strip()
-# # singleLineText = ' '.join(singleLineText.split())
-
-# # client = Anthropic()
-# # print(client.count_tokens(singleLineText))
-# # pyperclip.copy(singleLineText)
+        return False, -1

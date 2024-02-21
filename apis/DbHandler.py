@@ -77,7 +77,10 @@ class DbHandler():
 
         return self.addDocuments(indexName, [document], tensorFields)
 
-    def searchInIndex(self, indexName: str, query:str) -> Dict[str, Any]:
+    def getStats(self, indexName: str) -> Any:
+        return self.mq.index(indexName).get_stats()
+    
+    def searchInIndex(self, indexName: str, query:str, filter:str) -> Dict[str, Any]:
         """
         returns the following dict
         {
@@ -96,7 +99,7 @@ class DbHandler():
             ]
         }
         """
-        return self.mq.index(indexName).search(q=query)
+        return self.mq.index(indexName).search(q=query, approximate=True)
     
     def getIndexStatus(self, indexName: str) -> None:
         # only supported for marqo cloud
