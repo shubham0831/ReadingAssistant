@@ -143,28 +143,55 @@ prompts = UniqueDict.fromDict(
                 Key Points: key points in the text,
                 FAQs: faqs
         """,
-
         USER_QUESTION_PROMPT: """
-            I'll be giving you a piece of text, and based on the text answer the users question. Keep your answer short and simple, and also give the exact sentences you used to get to your answer.
+            I'll be giving you a piece of text, and based on the text answer the users question. Your response should just be a list of dictionary in python syntax and nothing else is needed,
+            just keep it direct and provide a list of dictionary.
 
             CONTEXT_GOES_HERE
 
-            Your response should be in the format of a list of dicts (python syntax), try to populate give at least 5 responses to the users question, along with your reasoning. If you are not able to give 5 responses it is fine.
-            A single response looks like the following
+            Your response should just be in the format of a list of dicts (python syntax), try to populate give at least 5 responses to the users question,
+            along with your reasoning. If you are not able to give 5 responses it is fine.
+            
+            Here is an example of what your output should look like if you do have 5 responses, if you do not have 5 response, just provide the number of 
+            responses you do have. It is not important to have exactly 5 responses.
 
-            {
-               "response" : {your_response_here},
-               "verbatim_line" : {the sentence from the text verbatim you used to form your response}
-            }
+            [
+                {
+                    "response" : {your_first_response},
+                    "verbatim_line" : {the sentence or sentences from the text from the text given you used to get your answer. It is very important that this sentence is verbatim down to the last character}
+                },
+                {
+                    "response" : {your_second_response},
+                    "verbatim_line" : {the sentence or sentences from the text from the text given you used to get your answer. It is very important that this sentence is verbatim down to the last character}
+                },
+                {
+                    "response" : {your_third_response},
+                    "verbatim_line" : {the sentence or sentences from the text from the text given you used to get your answer. It is very important that this sentence is verbatim down to the last character}
+                },
+                {
+                    "response" : {your_fourth_response},
+                    "verbatim_line" : {the sentence or sentences from the text from the text given you used to get your answer. It is very important that this sentence is verbatim down to the last character}
+                },
+                {
+                    "response" : {your_fifth_response},
+                    "verbatim_line" : {the sentence or sentences from the text from the text given you used to get your answer. It is very important that this sentence is verbatim down to the last character}
+                }
+            ]
 
-            If you think the context is not enough only return the following list of dict(python syntax)
-            {
-               "error" : "Not enough context",
-               "cause" : {Why you think you don't have enough context}
-            }
+            If you have a response and cannot pinpoint to a sentence or sentences verbatim, it is fine, give the closest guess you can verbatim. 
 
-            It is important to know that you either do or do not have enough context, you have to choose what to reply with. It is very important that your response to the user is just a list of dict and nothing else, no other text outside of the dict and list whatsoever. Your response will be mapped to a dict in python verbatim, so make sure your response is valid python. 
+            If you think that you have not been provided with adequate context, your output should look like the following:
+            [
+                {
+                   "error" : "Not enough context",
+                   "cause" : {Why you think you don't have enough context}
+                }
+            ]
+
+            It is important to know that you either do or do not have enough context, you have to choose what to reply with.
+            It is very important that your response to the user is just a list of dict and nothing else, no other text outside of the dict and list whatsoever. Your response will be mapped to a dict in python verbatim, so make sure your response is valid python. 
         """
+        
     }
 )
 

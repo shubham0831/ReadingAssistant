@@ -153,6 +153,8 @@ class ReadingAssistant():
             return ''
     
     def processQuery(self, indexName: str, fileKey: int, query: str, tillChunk:int=None) -> Dict[str, Any]:
+        # todo better query for model to ensure that it always returns in the same format
+        # todo better search in pdf, maybe use vector search and try to find the most similar text
         # todo add better filter in the query for tillChunk
         dbResponse = self.dbHandler.searchInIndex(indexName, query, str(tillChunk))
 
@@ -201,6 +203,7 @@ class ReadingAssistant():
                 }
 
                 if not found:
+                    i+=1
                     log.warn(f"Did not find verbatim line {verbatimLine} in chunk {chunkNumber}")
                     continue
 
